@@ -16,3 +16,21 @@ def generate_reply(message: str) -> str:
         return RESPONSES[normalized_message]
 
     return f"You said: {cleaned_message}"
+
+def run() -> None:
+    print("Trexovia Assistant")
+    print("Type 'help' for instructions or 'exit' to stop.\n")
+
+    while True:
+        user_message = input("You: ").strip()
+
+        if user_message.lower() == "exit":
+            print("Assistant: Goodbye!")
+            break
+
+        reply = generate_reply(user_message)
+        print(f"Assistant: {reply}")
+
+
+if __name__ == "__main__":
+    run()
