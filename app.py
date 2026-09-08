@@ -1,11 +1,33 @@
+from memory import add_message, load_history, save_history
+from typing import List, Dict, Optional
+
+
 RESPONSES = {
     "hello": "Hello, Obinna!",
     "hi": "Hi, Obinna!",
-    "help": "I understand hello, hi, help, and exit.",
+    "help": (
+        "I understand hello, hi, help, history, and exit."
+    ),
 }
 
 
-def generate_reply(message: str) -> str:
+def find_last_user_message(
+    history: List[Dict[str, str]],
+) -> Optional[str]:
+    for message in reversed(history):
+        if message["role"] == "user":
+            return message["content"]
+
+    return None
+
+
+def generate_reply(
+    message: str,
+    history: Optional[List[Dict[str, str]]] = None,
+) -> str:
+    if history is None:
+        history = []
+
     cleaned_message = message.strip()
     normalized_message = cleaned_message.lower()
 
@@ -15,10 +37,28 @@ def generate_reply(message: str) -> str:
     if normalized_message in RESPONSES:
         return RESPONSES[normalized_message]
 
+    history_commands = {
+        "history",
+        "what did i say",
+        "what did i say?",
+    }
+
+    if normalized_message in history_commands:
+        last_message = find_last_user_message(history)
+
+        if last_message:
+            return f'Your last message was: "{last_message}"'
+
+        return "You have not sent any previous messages."
+
     return f"You said: {cleaned_message}"
 
+
 def run() -> None:
+    history = load_history()
+
     print("Trexovia Assistant")
+    print(f"Loaded {len(history)} previous messages.")
     print("Type 'help' for instructions or 'exit' to stop.\n")
 
     while True:
@@ -28,8 +68,12 @@ def run() -> None:
             print("Assistant: Goodbye!")
             break
 
-        reply = generate_reply(user_message)
+        reply = generate_reply(user_message, history)
         print(f"Assistant: {reply}")
+
+        add_message(history, "user", user_message)
+        add_message(history, "assistant", reply)
+        save_history(history)
 
 
 if __name__ == "__main__":
