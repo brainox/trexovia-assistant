@@ -105,6 +105,12 @@ def run() -> None:
             print("Assistant: Goodbye!")
             break
 
+        if user_message.lower() == "clear":
+            history.clear()
+            save_history(history)
+            print("Assistant: Conversation history cleared.")
+            continue
+
         try:
             reply = generate_reply(user_message, history)
         except Exception as error:
