@@ -1,6 +1,8 @@
 import os
 from typing import Any, Optional
+from dotenv import load_dotenv
 
+load_dotenv()
 
 SYSTEM_INSTRUCTIONS = (
     "You are Trevoxia Assistant, a friendly and concise AI assistant. "
