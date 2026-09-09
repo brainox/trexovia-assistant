@@ -6,9 +6,10 @@ minimal rule-based bot intended for local experimentation rather than a
 production chat system.
 """
 
-from memory import add_message, load_history, save_history
-from typing import List, Dict, Optional
+from typing import Callable, Optional
 
+from llm import generate_ai_reply
+from memory import add_message, load_history, save_history
 
 RESPONSES = {
     "hello": "Hello, Obinna!",
@@ -20,21 +21,8 @@ RESPONSES = {
 
 
 def find_last_user_message(
-    history: List[Dict[str, str]],
+    history: list[dict[str, str]],
 ) -> Optional[str]:
-    """Return the most recent user message from the conversation history.
-
-    The chat history is expected to contain dictionaries with at least two keys:
-    "role" and "content". The function scans the history from newest to oldest,
-    returning the first message whose role is "user".
-
-    Args:
-        history: Ordered list of chat messages previously loaded from storage.
-
-    Returns:
-        The content of the latest user message, or None when no user message is
-        present in the history.
-    """
     for message in reversed(history):
         if message["role"] == "user":
             return message["content"]
@@ -44,7 +32,10 @@ def find_last_user_message(
 
 def generate_reply(
     message: str,
-    history: Optional[List[Dict[str, str]]] = None,
+    history: Optional[list[dict[str, str]]] = None,
+    llm_function: Optional[
+        Callable[[str, list[dict[str, str]]], str]
+    ] = None,
 ) -> str:
     """Create a reply for the provided user input.
 
@@ -56,6 +47,7 @@ def generate_reply(
         message: The raw text entered by the user.
         history: Optional conversation history used to answer history-related
             prompts. When omitted, an empty list is assumed.
+        llm_function: Optional function to generate AI replies. When omitted, a default LLM function is used.
 
     Returns:
         A string response that should be printed to the user.
@@ -86,7 +78,10 @@ def generate_reply(
 
         return "You have not sent any previous messages."
 
-    return f"You said: {cleaned_message}"
+    if llm_function is None:
+        llm_function = generate_ai_reply
+
+    return llm_function(cleaned_message, history)
 
 
 def run() -> None:
@@ -110,7 +105,13 @@ def run() -> None:
             print("Assistant: Goodbye!")
             break
 
-        reply = generate_reply(user_message, history)
+        try:
+            reply = generate_reply(user_message, history)
+        except Exception as error:
+            print("Assistant: I could not reach the AI service.")
+            print(f"Details: {error}")
+            continue
+        
         print(f"Assistant: {reply}")
 
         add_message(history, "user", user_message)

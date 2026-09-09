@@ -6,26 +6,39 @@ from app import generate_reply
 class GenerateReplyTests(unittest.TestCase):
     def test_returns_known_response(self) -> None:
         result = generate_reply("hello")
-        
         self.assertEqual(result, "Hello, Obinna!")
 
     def test_ignores_capitalization_and_spaces(self) -> None:
         result = generate_reply("  HELP  ")
-        print(result)
         self.assertEqual(
             result,
             "I understand hello, hi, help, history, and exit.",
         )
 
-    def test_returns_fallback_response(self) -> None:
-        result = generate_reply("Teach me Python")
+    def test_uses_llm_for_unknown_message(self) -> None:
+        def fake_llm(
+            message: str,
+            history: list[dict[str, str]],
+        ) -> str:
+            return f"AI reply to: {message}"
 
-        self.assertEqual(result, "You said: Teach me Python")
+        result = generate_reply(
+            "Teach me Python",
+            llm_function=fake_llm,
+        )
+
+        self.assertEqual(
+            result,
+            "AI reply to: Teach me Python",
+        )
 
     def test_rejects_empty_message(self) -> None:
         result = generate_reply("   ")
 
-        self.assertEqual(result, "Please enter a message.")
+        self.assertEqual(
+            result,
+            "Please enter a message.",
+        )
 
     def test_returns_last_user_message(self) -> None:
         history = [
