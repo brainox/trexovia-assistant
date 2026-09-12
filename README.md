@@ -1,226 +1,223 @@
-# Trexovia Assistant
+# Trevoxia Assistant
 
-> A private, proactive AI chief of staff that turns conversations, documents, email, and calendar context into dependable next actions.
+Trevoxia Assistant is a learning project for building an AI assistant one
+working feature at a time. The current version is a local prototype with a
+terminal interface, a Streamlit browser interface, OpenAI-generated responses,
+and JSON-backed conversation memory.
 
-Trexovia Assistant helps you stay ahead of the work that matters: it remembers
-what you have decided, grounds answers in your documents, prepares you for
-meetings, and surfaces opportunities before they become missed follow-ups. It
-can read connected services to build context, but it never performs an external
-write without showing you exactly what will happen and receiving your approval.
+> Current status: functional learning prototype. It is not production-ready.
 
-## What it does
+## Latest completed lesson
 
-- **Talk naturally.** Have a continuous conversation with an LLM that retains
-  useful short-term context.
-- **Remember deliberately.** Store durable preferences, commitments, people,
-  and project context with controls to review, edit, pin, or forget it.
-- **Answer from your knowledge.** Upload documents and receive grounded answers
-  with source citations instead of unsupported claims.
-- **Work across your day.** Search Gmail, inspect Calendar availability, triage
-  inboxes, draft replies, and prepare meeting briefs.
-- **Act safely.** Every side-effecting action—sending email, creating an event,
-  or changing access—pauses for an approval that names the target, effect, and
-  parameters.
-- **Bring in specialists.** Route work to focused research, communication,
-  planning, and operations agents while retaining a single, clear audit trail.
-- **Be helpfully proactive.** Detect stale conversations, upcoming meetings,
-  open commitments, and timely follow-ups without turning notifications into
-  noise.
+**Week 1, Day 4 — Streamlit Browser Chat Interface**
 
-## Product tour
+Latest application commit: [`9f2c9c0`](https://github.com/brainox/trexovia-assistant/commit/9f2c9c0)
 
-| Ask Trexovia | What happens |
-| --- | --- |
-| “What did we decide about the Atlas launch?” | Retrieves relevant long-term memories and connected documents, then cites the supporting sources. |
-| “Prepare me for my 2 PM with Maya.” | Builds a concise brief from the calendar event, recent email, previous notes, and open commitments. |
-| “Triage today’s urgent email.” | Classifies messages, identifies decisions and follow-ups, and proposes drafts or tasks. |
-| “Find a 30-minute slot with the design team.” | Reads availability and presents options; creating an event requires approval. |
-| “Send the summary to Maya.” | Creates an immutable approval preview. Nothing is sent until you approve it. |
+This checkpoint added:
 
-## How it works
+- a Streamlit browser chat;
+- shared message processing for the terminal and browser;
+- persistent conversation history;
+- clear-history controls;
+- separate user and assistant message counts; and
+- tests for the shared chat workflow.
+
+## What currently works
+
+- Start a conversation from the terminal.
+- Start a conversation from a browser.
+- Send unknown messages to an OpenAI model.
+- Handle `hello`, `hi`, `help`, and `history` locally.
+- Remember messages in `data/history.json` between application restarts.
+- Send up to the ten most recent saved messages to the model as context.
+- Clear memory with `clear`, `clear history`, or the browser button.
+- Display separate user and assistant message counts in the browser sidebar.
+- Test model integration without making live API requests.
+
+## How the current application works
 
 ```mermaid
-flowchart LR
-    U[You] --> C[Conversation & specialist agents]
-    C --> M[Short-term + long-term memory]
-    C --> R[Document RAG]
-    C --> T[Gmail & Calendar tools]
-    M --> C
-    R --> C
-    T --> P{External action?}
-    P -->|Read| C
-    P -->|Write| A[Approval preview]
-    A -->|Approved| X[Execute + verify]
-    A -->|Rejected / expired| C
-    X --> L[Audit log, metrics & evaluation data]
+flowchart TD
+    A[Terminal: app.py] --> C[process_message]
+    B[Browser: ui.py] --> C
+    C --> D[Local command or OpenAI]
+    C --> E[JSON memory]
 ```
 
-Trexovia keeps orchestration, policy enforcement, tool access, and user data
-boundaries outside the model. The model can propose a plan; deterministic
-services validate permissions, require approval where needed, execute the
-action idempotently, and verify the outcome before reporting success.
+`process_message()` is the shared workflow. It handles memory clearing or
+generates a reply, records the complete conversation turn, and saves the updated
+history. This prevents the terminal and browser from implementing different
+conversation rules.
 
-## Core capabilities
+## Project structure
 
-### Memory that stays useful
+```text
+trexovia-assistant/
+├── app.py
+├── llm.py
+├── memory.py
+├── ui.py
+├── requirements.txt
+└── tests/
+    ├── __init__.py
+    ├── test_app.py
+    ├── test_chat.py
+    ├── test_llm.py
+    └── test_memory.py
+```
 
-Trexovia maintains two complementary layers of context:
+| File | Current responsibility |
+| --- | --- |
+| `app.py` | Local commands, shared message processing, and terminal interface |
+| `llm.py` | OpenAI Responses API request and recent-context construction |
+| `memory.py` | Load, append, and save JSON conversation history |
+| `ui.py` | Streamlit browser interface and memory controls |
+| `tests/` | Offline tests for replies, workflow, model requests, and memory |
 
-- **Conversation memory** keeps the active discussion coherent without flooding
-  the model with old turns.
-- **Long-term memory** stores explicit facts, preferences, decisions,
-  commitments, and project context. Each recalled item includes why it was used,
-  and you can correct or remove it at any time.
+## Requirements
 
-### Grounded document intelligence
+The current learning environment uses:
 
-Documents are chunked, indexed, and retrieved within the current workspace.
-Retrieved material is treated as untrusted reference content—not as
-instructions—and answers retain document and page-level provenance.
+- Python 3.9.6
+- OpenAI Python SDK 2.48.0
+- python-dotenv 1.1.1
+- Streamlit 1.50.0
 
-### Gmail and Google Calendar
+Streamlit is pinned to 1.50.0 because the project currently runs on Python
+3.9.6. Newer Streamlit releases may require a newer Python version.
 
-With a connected Google account, Trexovia can:
+## Setup
 
-- find and summarize relevant threads;
-- triage messages into urgency and follow-up categories;
-- draft, but never silently send, replies;
-- inspect events and availability; and
-- assemble meeting preparation briefs with linked evidence.
-
-OAuth tokens are scoped to the minimum permissions required, encrypted at rest,
-and never exposed to the model prompt or browser client.
-
-### Agents and workflows
-
-Specialist agents handle focused tasks such as research, inbox triage, meeting
-prep, and communications. A workflow records its plan, status, tools,
-approvals, outputs, and verification receipt so you can resume work or inspect
-what happened later.
-
-## Safety and privacy
-
-Trexovia is designed to make assistant automation inspectable and reversible.
-
-- Read-only tools and write tools have separate permissions.
-- Write actions require an approval bound to the exact actor, target,
-  parameters, risk, and expiry. Material changes invalidate the approval.
-- Executions use idempotency keys and verify the provider’s authoritative state
-  before reporting completion.
-- Every user, workspace, memory, document, tool invocation, and audit event is
-  isolated by tenant identity.
-- Sensitive credentials remain server-side; secrets are never placed in model
-  context, client bundles, logs, or source control.
-- Retrieval is provenance-aware and resistant to instruction injection from
-  uploaded or connected content.
-
-Report suspected vulnerabilities privately to the project maintainers; never
-include credentials, private documents, or user data in a public issue.
-
-## Quick start
-
-### Prerequisites
-
-- Python 3.11+
-- An OpenAI API key (or a compatible model-provider endpoint)
-- Docker and Docker Compose for the full local stack
-
-### Run locally
+Clone the repository and enter the project directory:
 
 ```bash
 git clone https://github.com/brainox/trexovia-assistant.git
 cd trexovia-assistant
+```
 
-python -m venv .venv
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+```
 
-touch .env
-# Add OPENAI_API_KEY and select OPENAI_MODEL in .env
+Install the pinned dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Create a `.env` file in the project root:
+
+```env
+OPENAI_API_KEY=replace_with_your_api_key
+OPENAI_MODEL=replace_with_a_model_available_to_your_account
+```
+
+Do not commit `.env`. It is excluded by `.gitignore`.
+
+## Run the terminal assistant
+
+Start the command-line interface:
+
+```bash
 python app.py
 ```
 
-The assistant stores local development data in `data/`. Add `data/` and
-`.env` to your personal ignore rules and never commit either file.
+Available local commands:
 
-### Run the full stack
+| Command | Result |
+| --- | --- |
+| `hello` | Returns the saved greeting |
+| `hi` | Returns the saved greeting |
+| `help` | Lists the supported local commands |
+| `history` | Returns the most recent user message |
+| `clear` | Clears persistent conversation history |
+| `clear history` | Clears persistent conversation history |
+| `exit` | Stops the terminal application |
 
-```bash
-docker compose up --build
-```
+Messages that do not match a local command are sent to the configured OpenAI
+model.
 
-Open `http://localhost:3000` for the web app. The API is available at
-`http://localhost:8000`; its health endpoint reports database, queue, and
-model-provider readiness.
+## Run the browser assistant
 
-## Configuration
-
-Create `.env` (or copy `.env.example` when included in a release) and set the
-values appropriate to your environment. At minimum, configure:
-
-```env
-OPENAI_API_KEY=your_api_key
-OPENAI_MODEL=gpt-5
-DATABASE_URL=postgresql://trexovia:trexovia@localhost:5432/trexovia
-REDIS_URL=redis://localhost:6379/0
-APP_ENCRYPTION_KEY=replace_with_a_32_byte_secret
-```
-
-For Gmail and Calendar, create Google OAuth credentials and add the redirect
-URL shown by the Integrations screen. Keep OAuth client secrets and encryption
-keys in your deployment’s secret manager—not in `.env` files shared with a
-team.
-
-## Testing and quality
+Start the Streamlit interface:
 
 ```bash
-pytest
-ruff check .
-ruff format --check .
+python -m streamlit run ui.py
 ```
 
-The CI pipeline runs unit and integration tests, type and lint checks,
-dependency/security scanning, and evaluation suites for retrieval quality,
-approval enforcement, tool reliability, and regression-prone user journeys.
+The browser interface currently provides:
 
-## Deployment
+- user and assistant chat bubbles;
+- restored JSON conversation history;
+- a thinking indicator during model requests;
+- user and assistant message counts;
+- a clear-history button; and
+- a visible error message when response generation fails.
 
-Trexovia is containerized for cloud deployment. A production environment needs:
+## Conversation memory
 
-- managed PostgreSQL with vector search and backups;
-- Redis-backed worker queues for durable workflows;
-- object storage for document originals;
-- a secrets manager for model and OAuth credentials;
-- a public HTTPS callback URL for Google OAuth; and
-- centralized logs, metrics, traces, alerts, and evaluation reporting.
-
-Run database migrations before deploying a new version. Workers use leases and
-idempotency keys so retries do not duplicate an approved external action.
-
-## Repository guide
+Development conversation history is stored locally in:
 
 ```text
-app/             API, orchestration, tools, agents, and policy services
-web/             Web application
-workers/         Durable workflow and ingestion workers
-tests/           Unit, integration, and end-to-end tests
-infra/           Containers, deployment, and infrastructure configuration
-docs/            Architecture, connector, and operational documentation
+data/history.json
 ```
 
-## Status
+Each saved message has a role and content:
 
-Trexovia Assistant is production-ready for personal and workspace use. The
-project continues to evolve daily; the public API, connector scopes, and agent
-skills follow semantic versioning and are documented with migration notes.
+```json
+{
+  "role": "user",
+  "content": "Explain an API"
+}
+```
 
-## Contributing
+The history file is excluded from Git because it can contain private
+conversation data.
 
-Contributions are welcome. Please open an issue before undertaking a large
-change, keep pull requests focused, add tests for behavior changes, and avoid
-including real user data, credentials, or provider responses in commits.
+## Verification
 
-## License
+Compile every current Python file:
 
-Add the project license here (for example, MIT or Apache-2.0) before accepting
-external contributions.
+```bash
+python -m compileall -q app.py llm.py memory.py ui.py tests
+```
+
+Run the complete offline test suite:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Current expected result:
+
+```text
+Ran 12 tests
+
+OK
+```
+
+The tests use fake model clients and injected functions where appropriate, so
+the offline suite does not require API credits. A live model request must be
+verified separately using the API key and model configured in `.env`.
+
+## Current limitations
+
+- Conversation history uses one local JSON file.
+- The application supports one local user and one conversation history.
+- Stored messages are not encrypted.
+- There is no authentication or user account system.
+- There are no external tools, document retrieval, Gmail, or Calendar
+  integrations.
+- There is no background workflow engine.
+- There is no deployment, centralized logging, or production monitoring.
+- Automated tests do not make a live OpenAI request.
+
+## Security notes
+
+- Never place an API key directly in Python source code.
+- Never commit `.env` or `data/history.json`.
+- Revoke and replace any API key exposed in source control, screenshots, or
+  messages.
