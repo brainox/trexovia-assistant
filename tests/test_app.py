@@ -12,7 +12,7 @@ class GenerateReplyTests(unittest.TestCase):
         result = generate_reply("  HELP  ")
         self.assertEqual(
             result,
-            "I understand hello, hi, help, history, and exit.",
+            "I understand hello, hi, help, history, clear, and exit.",
         )
 
     def test_uses_llm_for_unknown_message(self) -> None:
