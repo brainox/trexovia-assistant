@@ -15,10 +15,16 @@ RESPONSES = {
     "hello": "Hello, Obinna!",
     "hi": "Hi, Obinna!",
     "help": (
-        "I understand hello, hi, help, history, and exit."
+        "I understand hello, hi, help, history, clear, and exit."
     ),
 }
 
+CLEAR_COMMANDS = {"clear", "clear history"}
+CLEAR_CONFIRMATION = "Conversation history cleared."
+
+History = list[dict[str, str]]
+ReplyFunction = Callable[[str, History], str]
+SaveFunction = Callable[[History], None]
 
 def find_last_user_message(
     history: list[dict[str, str]],
@@ -28,6 +34,15 @@ def find_last_user_message(
             return message["content"]
 
     return None
+
+def clear_history_if_requested(
+    message: str,
+    history: History,
+) -> bool:
+    if message.strip().lower() not in CLEAR_COMMANDS:
+        return False
+    history.clear()
+    return True
 
 
 def generate_reply(
@@ -83,6 +98,23 @@ def generate_reply(
 
     return llm_function(cleaned_message, history)
 
+def process_message(
+    message: str,
+    history: History,
+    reply_function: ReplyFunction = generate_reply,
+    save_function: SaveFunction = save_history,
+) -> str:
+    if clear_history_if_requested(message, history):  # 1
+        save_function(history)
+        return CLEAR_CONFIRMATION
+
+    reply = reply_function(message, history)           # 2
+
+    add_message(history, "user", message)              # 3
+    add_message(history, "assistant", reply)
+    save_function(history)                             # 4
+
+    return reply
 
 def run() -> None:
     """Start the interactive chat loop in the terminal.
@@ -105,24 +137,9 @@ def run() -> None:
             print("Assistant: Goodbye!")
             break
 
-        if user_message.lower() == "clear":
-            history.clear()
-            save_history(history)
-            print("Assistant: Conversation history cleared.")
-            continue
-
-        try:
-            reply = generate_reply(user_message, history)
-        except Exception as error:
-            print("Assistant: I could not reach the AI service.")
-            print(f"Details: {error}")
-            continue
+        reply = process_message(user_message, history)
         
         print(f"Assistant: {reply}")
-
-        add_message(history, "user", user_message)
-        add_message(history, "assistant", reply)
-        save_history(history)
 
 
 if __name__ == "__main__":
