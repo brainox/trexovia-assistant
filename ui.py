@@ -1,7 +1,11 @@
 import streamlit as st
 
 from app import process_message
-from memory import load_history
+from memory import (
+    count_messages,
+    format_history_as_markdown,
+    load_history,
+)
 
 
 st.set_page_config(
@@ -38,10 +42,22 @@ if user_message := st.chat_input("Message Trevoxia"):  # 1
 
 with st.sidebar:
     st.subheader("Memory")
-    # user message: count
-    st.write(f"User messages: {len([msg for msg in history if msg['role'] == 'user'])}")  # 2
-    # Assistant message count
-    st.write(f"Assistant messages: {len([msg for msg in history if msg['role'] == 'assistant'])}")  # 3
+    user_count = count_messages(history, "user")            # 1
+    assistant_count = count_messages(history, "assistant")  # 2
+
+    st.write(f"User messages: {user_count}")
+    st.write(f"Assistant messages: {assistant_count}")
+
+    with st.expander("Inspect saved memory"):  # 1
+        st.json(history)
+
+    st.download_button(
+        "Download conversation",
+        data=format_history_as_markdown(history),  # 1
+        file_name="trevoxia-conversation.md",      # 2
+        mime="text/markdown",                      # 3
+        use_container_width=True,
+    ) 
 
     if st.button("Clear history", use_container_width=True):
         process_message("clear", history)       # 2
