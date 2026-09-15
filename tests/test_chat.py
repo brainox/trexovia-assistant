@@ -57,3 +57,29 @@ class ChatWorkflowTests(unittest.TestCase):
         self.assertEqual(reply, CLEAR_CONFIRMATION)  # 1
         self.assertEqual(history, [])                # 2
         self.assertEqual(saved_snapshots, [[]])      # 3
+
+    def test_failed_reply_does_not_change_or_save_history(self) -> None:
+        history = [
+            {"role": "user", "content": "Existing message"},
+        ]
+        saved_snapshots = []
+
+        def failing_reply(message: str, current_history: list) -> str:
+            raise RuntimeError("AI service unavailable")  # 1
+
+        def fake_save(current_history: list) -> None:
+            saved_snapshots.append(list(current_history))
+
+        with self.assertRaises(RuntimeError):             # 2
+            process_message(
+                "New message",
+                history,
+                reply_function=failing_reply,
+                save_function=fake_save,
+            )
+
+        self.assertEqual(
+            history,
+            [{"role": "user", "content": "Existing message"}],
+        )                                                 # 3
+        self.assertEqual(saved_snapshots, [])             # 4

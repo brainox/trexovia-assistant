@@ -2,7 +2,13 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from memory import add_message, load_history, save_history
+from memory import (
+    add_message,
+    count_messages,
+    format_history_as_markdown,
+    load_history,
+    save_history,
+)
 
 
 class MemoryTests(unittest.TestCase):
@@ -25,6 +31,32 @@ class MemoryTests(unittest.TestCase):
 
             self.assertEqual(loaded_history, history)
 
+    def test_counts_messages_for_one_role(self) -> None:
+        history = [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi!"},
+            {"role": "user", "content": "Help me plan."},
+        ]
+
+        self.assertEqual(count_messages(history, "user"), 2)       # 1
+        self.assertEqual(count_messages(history, "assistant"), 1)  # 2
+
+    def test_formats_history_as_markdown(self) -> None:
+        history = [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi!"},
+        ]
+
+        result = format_history_as_markdown(history)
+
+        self.assertEqual(
+            result,
+            (
+                "# Trevoxia Conversation\n\n"  # 1
+                "## You\nHello\n\n"            # 2
+                "## Trevoxia\nHi!\n"           # 3
+            ),
+        )
 
 if __name__ == "__main__":
     unittest.main()
