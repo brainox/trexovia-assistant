@@ -103,12 +103,32 @@ def count_messages(
     history: list[dict[str, str]],
     role: str,
 ) -> int:
-    return sum(                         # 1
+    return sum(
         1
-        for message in history          # 2
-        if message["role"] == role      # 3
+        for message in history
+        if message["role"] == role
     )
 
+def format_history_as_markdown(
+    history: list[dict[str, str]],
+) -> str:
+    lines = ["# Trevoxia Conversation", ""]  # 1
+
+    if not history:
+        lines.append("No messages yet.")     # 2
+
+    for message in history:
+        label = ROLE_LABELS.get(              # 3
+            message["role"],
+            message["role"].title(),
+        )
+        lines.extend([                        # 4
+            f"## {label}",
+            message["content"],
+            "",
+        ])
+
+    return "\n".join(lines).rstrip() + "\n"   # 5
 
 def save_history(history: list[dict[str, str]], path: Path = DEFAULT_HISTORY_PATH) -> None:
     """Persist the in-memory history to disk as JSON.
