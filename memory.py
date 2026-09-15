@@ -36,6 +36,11 @@ load_history/save_history to change where history is read from or written
 to.
 """
 
+ROLE_LABELS = {
+    "user": "You",
+    "assistant": "Trevoxia",
+}
+
 
 def load_history(path: Path = DEFAULT_HISTORY_PATH) -> list[dict[str, str]]:
     """Load conversation history from a JSON file.
@@ -93,6 +98,16 @@ def add_message(history: list[dict[str, str]], role: str, content: str) -> None:
           before calling this helper.
     """
     history.append({"role": role, "content": content})
+
+def count_messages(
+    history: list[dict[str, str]],
+    role: str,
+) -> int:
+    return sum(                         # 1
+        1
+        for message in history          # 2
+        if message["role"] == role      # 3
+    )
 
 
 def save_history(history: list[dict[str, str]], path: Path = DEFAULT_HISTORY_PATH) -> None:
