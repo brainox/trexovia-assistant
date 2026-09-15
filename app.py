@@ -137,7 +137,12 @@ def run() -> None:
             print("Assistant: Goodbye!")
             break
 
-        reply = process_message(user_message, history)
+        try:
+            reply = process_message(user_message, history)
+        except Exception as error:
+            print(f"Assistant: I could not generate a response: {error}")
+            print(f"Details: {error}")
+            continue
         
         print(f"Assistant: {reply}")
 
